@@ -1,0 +1,132 @@
+-- ============================================================
+-- PROJECT: Credit Card Finance Reporting
+-- DATABASE: PostgreSQL
+-- DESCRIPTION: Schema setup, data ingestion, and basic 
+--              exploratory queries for credit card analytics
+=================================================
+
+
+-- ============================================================
+-- SECTION 1: DATABASE & TABLE CREATION
+-- ============================================================
+
+-- Create the database
+CREATE DATABASE ccdb;
+
+-- Table 1: Credit Card Transaction Details
+CREATE TABLE cc_detail (
+    Client_Num          VARCHAR(20),
+    Card_Category       VARCHAR(20),
+    Annual_Fees         VARCHAR(20),
+    Activation_30_Days  VARCHAR(20),
+    Customer_Acq_Cost   VARCHAR(20),
+    Week_Start_Date     VARCHAR(20),
+    Week_Num            VARCHAR(20),
+    Qtr                 VARCHAR(10),
+    Current_Year        VARCHAR(20),
+    Credit_Limit        VARCHAR(20),
+    Total_Revolving_Bal VARCHAR(20),
+    Total_Trans_Amt     VARCHAR(20),
+    Total_Trans_Ct      VARCHAR(20),
+    Avg_Utilization_Ratio VARCHAR(20),
+    Use_Chip            VARCHAR(20),
+    Exp_Type            VARCHAR(50),
+    Interest_Earned     VARCHAR(20),
+    Delinquent_Acc      VARCHAR(20)
+);
+
+-- Table 2: Customer Demographics & Profile
+CREATE TABLE cust_detail (
+    Client_Num              INT,
+    Customer_Age            INT,
+    Gender                  VARCHAR(5),
+    Dependent_Count         INT,
+    Education_Level         VARCHAR(50),
+    Marital_Status          VARCHAR(20),
+    State_cd                VARCHAR(50),
+    Zipcode                 VARCHAR(20),
+    Car_Owner               VARCHAR(5),
+    House_Owner             VARCHAR(5),
+    Personal_Loan           VARCHAR(5),
+    Contact                 VARCHAR(50),
+    Customer_Job            VARCHAR(50),
+    Income                  INT,
+    Cust_Satisfaction_Score INT
+);
+
+
+-- ============================================================
+-- SECTION 2: DATA INGESTION
+-- ============================================================
+
+-- Load credit card data from CSV
+
+
+FROM 'D:\credit_card.csv'
+DELIMITER ','
+CSV HEADER;
+
+-- Load customer data from CSV
+FROM 'D:\customer.csv'
+DELIMITER ','
+CSV HEADER;
+
+
+-- ============================================================
+-- SECTION 3: DATA VALIDATION — ROW COUNTS
+-- ============================================================
+
+-- Check record counts for both tables in a single query
+SELECT 'cc_detail'   AS table_name, COUNT(*) AS row_count FROM cc_detail
+UNION ALL
+SELECT 'cust_detail' AS table_name, COUNT(*) AS row_count FROM cust_detail;
+
+
+-- ============================================================
+-- SECTION 4: EXPLORATORY DATA QUERIES
+-- ============================================================
+
+-- View all records from cc_detail
+SELECT * FROM cc_detail;
+
+-- View first 500 records from cust_detail
+SELECT * FROM cust_detail LIMIT 500;
+
+-- View records at a specific offset (e.g., rows 1001–1100)
+SELECT * FROM cust_detail LIMIT 100 OFFSET 1000;
+
+
+-- ============================================================
+-- SECTION 5: TABLE MAINTENANCE (USE WITH CAUTION)
+-- ============================================================
+
+-- Remove all rows from a table without dropping the structure
+-- Useful for reloading data from scratch
+TRUNCATE TABLE cust_detail;
+TRUNCATE TABLE cc_detail;
+
+-- Drop a table entirely (uncomment only when needed)
+-- DROP TABLE IF EXISTS cc_detail;
+-- DROP TABLE IF EXISTS cust_detail;
+
+-- 1. Revenue by Card Category
+SELECT 
+    Card_Category,
+    COUNT(DISTINCT Client_Num)                       AS total_customers,
+    SUM(CAST(Total_Trans_Amt AS NUMERIC))            AS total_transaction_amt,
+    SUM(CAST(Interest_Earned AS NUMERIC))            AS total_interest_earned
+FROM cc_detail
+GROUP BY Card_Category
+ORDER BY total_transaction_amt DESC;
+ 
+ 
+-- 2. Quarterly Performance
+SELECT 
+    Qtr,
+    SUM(CAST(Total_Trans_Amt AS NUMERIC))            AS total_transaction_amt,
+    SUM(CAST(Interest_Earned AS NUMERIC))            AS total_interest_earned,
+    ROUND(AVG(CAST(Avg_Utilization_Ratio AS NUMERIC)), 3) AS avg_utilization
+FROM cc_detail
+GROUP BY Qtr
+ORDER BY Qtr;
+ 
